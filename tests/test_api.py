@@ -152,3 +152,17 @@ def test_frontend_is_served(client):
     assert page.status_code == 200 and "Approval Desk" in page.text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/static/styles.css").status_code == 200
+
+
+def test_schema_errors_use_the_same_error_envelope(client):
+    bad_body = client.post("/api/drafts/1/approve", json={"version": 0}, headers=auth())
+    assert bad_body.status_code == 422
+    assert bad_body.json()["error"]["code"] == "invalid_request"
+    assert "version" in bad_body.json()["error"]["message"]
+    bad_path = client.get("/api/drafts/abc", headers=auth())
+    assert (bad_path.status_code, bad_path.json()["error"]["code"]) == (422, "invalid_request")
+
+
+def test_junk_hash_gets_401_not_500(client):
+    response = client.get("/api/me", headers={"Authorization": "tma auth_date=1&hash=%C3%A9"})
+    assert (response.status_code, response.json()["error"]["code"]) == (401, "bad_signature")

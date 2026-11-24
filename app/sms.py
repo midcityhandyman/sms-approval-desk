@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import re
 
-E164 = re.compile(r"^\+[1-9]\d{7,14}$")
+# ASCII digits only, matched against the whole string. "\d" would also accept
+# digits from other scripts and "$" would let a trailing newline through.
+E164 = re.compile(r"\+[1-9][0-9]{7,14}")
 
 # GSM 03.38 basic character set. Text made only of these (plus the extension
 # set below) travels as 7 bit and gets 160 characters per single segment.
@@ -17,7 +19,7 @@ GSM7_EXTENDED = frozenset("^{}\\[~]|€")
 
 
 def is_valid_phone(phone: str) -> bool:
-    return bool(E164.match(phone or ""))
+    return bool(E164.fullmatch(phone or ""))
 
 
 def segment_info(body: str) -> dict:

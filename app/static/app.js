@@ -191,6 +191,10 @@
       actions.classList.add("double");
       action("Edit", "", function () { openSheet("edit", draft); });
       action("Retry send", "primary", function () { act(draft, "retry", null, "Sent"); });
+    } else if (draft.status === "approved") {
+      // Approved but never handed to the sender (the server stopped in between).
+      actions.classList.add("single");
+      action("Send now", "primary", function () { act(draft, "retry", null, "Sent"); });
     } else if (draft.status === "rejected") {
       actions.classList.add("single");
       action("Edit and resubmit", "", function () { openSheet("edit", draft); });

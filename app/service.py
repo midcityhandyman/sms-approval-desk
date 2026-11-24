@@ -29,6 +29,7 @@ from .sms import is_valid_phone, segment_info
 
 STATUSES = ("pending", "approved", "sending", "sent", "failed", "rejected")
 EDITABLE = ("pending", "rejected", "failed")
+RETRYABLE = ("failed", "approved")
 MAX_NOTE_CHARS = 200
 
 
@@ -295,11 +296,19 @@ def approve_draft(
 
 
 def retry_send(conn: sqlite3.Connection, sender: Sender, draft_id: int, actor: Actor) -> dict:
-    """Try a failed delivery again. The approval on the current version still stands."""
+    """Send an approved version that has not gone out. The approval still stands.
+
+    Covers a failed delivery, and a draft left in ``approved`` because the
+    process stopped after the approval was saved but before the send was
+    claimed. In both states the sender has not delivered this draft.
+    ``sending`` is not retryable: the sender may already have been called.
+    """
     draft = _load(conn, draft_id)
-    if draft["status"] != "failed":
+    if draft["status"] not in RETRYABLE:
         raise DeskError(
-            409, "not_failed", f"Only failed drafts can be retried. This one is {draft['status']}"
+            409,
+            "not_retryable",
+            f"Only failed or approved drafts can be retried. This one is {draft['status']}",
         )
     return dispatch(conn, sender, draft_id, actor)
 

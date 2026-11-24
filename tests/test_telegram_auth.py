@@ -172,3 +172,14 @@ def test_display_name_fallbacks():
     assert verify_init_data(only_username, FAKE_TOKEN, now=NOW).display_name == "desk_user"
     bare = sign_init_data({"auth_date": "1700000000", "user": '{"id":5}'}, FAKE_TOKEN)
     assert verify_init_data(bare, FAKE_TOKEN, now=NOW).display_name == "user 5"
+
+
+def test_non_ascii_hash_is_a_bad_signature_not_a_crash():
+    # hmac.compare_digest raises TypeError on non ASCII text. Unsigned input
+    # must still get a clean refusal.
+    assert code_of("auth_date=1700000000&hash=" + quote("é" * 64)) == "bad_signature"
+
+
+def test_non_ascii_digits_in_auth_date_even_when_signed():
+    signed = sign_init_data({"auth_date": "²", "user": USER_JSON}, FAKE_TOKEN)
+    assert code_of(signed) == "missing_auth_date"

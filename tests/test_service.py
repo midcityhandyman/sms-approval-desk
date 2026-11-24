@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import dataclasses
 import sqlite3
+import threading
 
 import pytest
 
 from app import service
+from app.db import connect, init_db
 from app.sender import MockSender
 from app.service import DeskError
 
@@ -131,7 +133,7 @@ def test_sent_draft_is_frozen(conn, settings, sender):
     ) == (409, "not_pending")
     assert error_code(lambda: service.retry_send(conn, sender, draft["id"], REVIEWER)) == (
         409,
-        "not_failed",
+        "not_retryable",
     )
     assert error_code(lambda: service.dispatch(conn, sender, draft["id"], REVIEWER)) == (
         409,
@@ -158,7 +160,7 @@ def test_failed_send_can_be_edited_back_to_pending(conn, settings, sender):
     assert (edited["status"], edited["current_version"]) == ("pending", 2)
     assert error_code(lambda: service.retry_send(conn, sender, draft["id"], REVIEWER)) == (
         409,
-        "not_failed",
+        "not_retryable",
     )
 
 
@@ -247,3 +249,54 @@ def test_mock_sender_ids_are_deterministic():
     one, two = MockSender(), MockSender()
     assert one.send("+15555550101", "hi") == two.send("+15555550101", "hi")
     assert one.send("+15555550199", "hi").ok is False
+
+
+def test_draft_stranded_in_approved_can_be_sent_by_retry(conn, settings, sender):
+    # What a stop between "approval saved" and "send claimed" leaves behind.
+    draft = make(conn, settings)
+    conn.execute("UPDATE drafts SET status = 'approved' WHERE id = ?", (draft["id"],))
+    sent = service.retry_send(conn, sender, draft["id"], SECOND)
+    assert sent["status"] == "sent"
+    assert len(sender.sent) == 1
+
+
+def test_retry_refuses_a_draft_that_is_mid_send(conn, settings, sender):
+    draft = make(conn, settings)
+    conn.execute("UPDATE drafts SET status = 'sending' WHERE id = ?", (draft["id"],))
+    assert error_code(lambda: service.retry_send(conn, sender, draft["id"], REVIEWER)) == (
+        409,
+        "not_retryable",
+    )
+    assert sender.attempts == 0
+
+
+def test_two_reviewers_approving_at_once_send_one_text(settings, sender):
+    """Real concurrency: separate connections on separate threads, same draft."""
+    setup = connect(settings.db_path)
+    init_db(setup)
+    draft = make(setup, settings)
+    setup.close()
+    barrier = threading.Barrier(8)
+    outcomes: list[str] = []
+
+    def tap(actor):
+        own = connect(settings.db_path)
+        try:
+            barrier.wait(timeout=10)
+            service.approve_draft(own, settings, sender, draft["id"], 1, actor)
+            outcomes.append("sent")
+        except DeskError as exc:
+            outcomes.append(exc.code)
+        finally:
+            own.close()
+
+    threads = [
+        threading.Thread(target=tap, args=(REVIEWER if n % 2 else SECOND,)) for n in range(8)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    assert outcomes.count("sent") == 1, outcomes
+    assert len(outcomes) == 8 and set(outcomes) <= {"sent", "not_pending"}, outcomes
+    assert sender.attempts == 1

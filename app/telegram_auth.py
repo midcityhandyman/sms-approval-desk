@@ -154,11 +154,16 @@ def verify_init_data(
     if not received:
         raise InitDataError("missing_hash", "Init data has no hash field")
     expected = compute_hash(fields, bot_token)
-    if not hmac.compare_digest(expected, received.strip().lower()):
+    # Compare bytes: compare_digest raises TypeError on non ASCII str, which
+    # would turn a junk hash into a 500 instead of a clean refusal.
+    if not hmac.compare_digest(
+        expected.encode("ascii"), received.strip().lower().encode("utf-8")
+    ):
         raise InitDataError("bad_signature", "Init data signature does not match")
 
     raw_auth_date = fields.get("auth_date", "")
-    if not raw_auth_date.isdigit():
+    # isdigit alone accepts characters such as "²" that int() then refuses.
+    if not (raw_auth_date.isascii() and raw_auth_date.isdigit()):
         raise InitDataError("missing_auth_date", "Init data has no usable auth_date")
     auth_date = int(raw_auth_date)
     current = time.time() if now is None else now

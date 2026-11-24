@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Iterator
 
 from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -71,6 +72,14 @@ def create_app(settings: Settings | None = None, sender: Sender | None = None) -
     @app.exception_handler(DeskError)
     async def _desk_error(_: Request, exc: DeskError) -> JSONResponse:
         return _error(exc.status_code, exc.code, exc.message)
+
+    @app.exception_handler(RequestValidationError)
+    async def _invalid_request(_: Request, exc: RequestValidationError) -> JSONResponse:
+        # Same envelope as every other error, so the frontend can show the message.
+        first = exc.errors()[0] if exc.errors() else {}
+        where = ".".join(str(part) for part in first.get("loc", ()))
+        message = f"{where}: {first.get('msg', 'invalid value')}" if where else "Invalid request"
+        return _error(422, "invalid_request", message)
 
     def get_conn() -> Iterator[sqlite3.Connection]:
         conn = connect(settings.db_path)

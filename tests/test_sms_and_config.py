@@ -77,3 +77,8 @@ def test_only_mock_sender_exists():
     assert build_sender("mock").name == "mock"
     with pytest.raises(ValueError):
         build_sender("carrier-x")
+
+
+@pytest.mark.parametrize("phone", ["+15555550101\n", "+1555555\u0660\u0661\u0660\u0661", "\uff0b15555550101"])
+def test_phone_must_be_plain_ascii_digits_with_nothing_after(phone):
+    assert is_valid_phone(phone) is False
