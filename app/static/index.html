@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Approval Desk</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <!-- Telegram's Mini App bridge. Outside Telegram (or offline) it simply does not
+       load and the page falls back to the dev sign-in helper. -->
+  <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+</head>
+<body>
+  <header class="top">
+    <div class="top-row">
+      <h1>Approval Desk</h1>
+      <button id="who" class="who" type="button" title="Signed in reviewer">...</button>
+    </div>
+    <nav id="tabs" class="tabs" role="tablist" aria-label="Draft status"></nav>
+  </header>
+
+  <main id="list" class="list" aria-live="polite"></main>
+
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <form id="sheet-form" class="sheet-panel" autocomplete="off">
+      <h2 id="sheet-title"></h2>
+      <p id="sheet-hint" class="hint"></p>
+      <textarea id="sheet-text" rows="6"></textarea>
+      <div id="sheet-meter" class="meter"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button id="sheet-submit" type="submit" class="btn primary"></button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

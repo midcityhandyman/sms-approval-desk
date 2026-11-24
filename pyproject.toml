@@ -1,0 +1,9 @@
+[project]
+name = "sms-approval-desk"
+version = "1.0.0"
+description = "Approval desk for outbound texts, built as a Telegram Mini App style web app"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

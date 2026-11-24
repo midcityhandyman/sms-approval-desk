@@ -1,0 +1,64 @@
+SMS Approval Desk demo (offline, fake bot token, mock sender)
+Seeded 5 synthetic drafts. Staff allowlist: Robin (2001), Sky (2002).
+Second approver rule: ON (you cannot approve text you wrote).
+
+== 1. Requests without valid Telegram init data are refused
+   401 missing_init_data: Open this page from the Telegram bot  (no Authorization header)
+   401 bad_signature: Init data signature does not match  (user id altered after signing)
+   401 bad_signature: Init data signature does not match  (signed by a different bot)
+   403 not_staff: Your Telegram account is not on the staff list  (valid signature, not on the staff list)
+
+== 2. Robin opens the desk
+   Signed in as Robin Reviewer (Telegram id 2001)
+   #1 v1 to Alex Sample +15555550101 [Appointment reminder] 130 chars, 1 segment(s)
+   #2 v1 to Jordan Example +15555550102 [Quote follow up] 119 chars, 1 segment(s)
+   #3 v1 to Casey Placeholder +15555550103 [Running late notice] 114 chars, 1 segment(s)
+   #4 v1 to Riley Testcase +15555550104 [Review request] 115 chars, 1 segment(s)
+   #5 v1 to Morgan Demo +15555550199 [Invoice reminder] 127 chars, 1 segment(s)
+
+== 3. Robin approves draft 1 as written
+   200 draft 1 -> sent, version 1
+
+== 4. Robin edits draft 3. The edit becomes version 2 and needs approval
+   200 draft 3 -> pending, version 2
+   Texts sent so far: 1 (the edit sent nothing)
+
+== 5. Sky still has version 1 on screen and taps Approve
+   409 stale_version: You were looking at version 1 but the draft is now at version 2. Reload and review the latest text.
+
+== 6. Robin tries to approve the edit Robin just wrote
+   403 second_approver_required: You wrote this version, so someone else has to approve it
+
+== 7. Sky reloads, reads version 2 and approves it
+   200 draft 3 -> sent, version 2
+
+== 8. Sky rejects draft 4 with a reason
+   200 draft 4 -> rejected, version 1
+
+== 9. Sky approves draft 5 but the mock carrier refuses the number
+   200 draft 5 -> failed, version 1
+   (carrier recovers)
+   200 draft 5 -> sent, version 1  (retry by Robin)
+
+== 10. A second tap on Approve cannot send a text twice
+   409 not_pending: Only pending drafts can be approved. This one is sent
+
+== History of draft 3
+   v1 created     by drafting bot
+   v2 edited      by Robin Reviewer (replaces v1)
+   v2 approved    by Sky Checker
+   v2 sent        by Sky Checker (mock-0002-f4fbc8f0)
+
+== Outbox (what the mock sender was handed)
+   draft 1 v1 to +15555550101: sent [mock-0001-c12560d6]
+      "Hi Alex, this is a reminder that your service visit is booked for Tuesday between 9 and 11. Reply C to confirm or R to reschedule."
+   draft 3 v2 to +15555550103: sent [mock-0002-f4fbc8f0]
+      "Hi Casey, our crew is running about 20 minutes behind today. New arrival window is 2:20 to 2:40. Sorry for the wait."
+   draft 5 v1 to +15555550199: failed [mock carrier rejected the number]
+      "Hi Morgan, a friendly reminder that invoice 1042 is due Friday. You can pay at https://example.com/pay or reply with questions."
+   draft 5 v1 to +15555550199: sent [mock-0004-fcb05249]
+      "Hi Morgan, a friendly reminder that invoice 1042 is due Friday. You can pay at https://example.com/pay or reply with questions."
+
+== Final counts
+   pending: 1, sent: 3, rejected: 1
+   Mock sender delivered 3 texts in 4 attempts.

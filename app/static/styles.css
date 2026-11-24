@@ -1,0 +1,196 @@
+/* Mobile first. Colours follow the Telegram theme when the page runs inside
+   Telegram and fall back to a neutral light or dark palette elsewhere. */
+:root {
+  --bg: var(--tg-theme-secondary-bg-color, #f1f2f5);
+  --card: var(--tg-theme-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #16181d);
+  --muted: var(--tg-theme-hint-color, #6b7280);
+  --accent: var(--tg-theme-button-color, #2563eb);
+  --accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --line: rgba(128, 128, 128, 0.25);
+  --ok: #15803d;
+  --warn: #b45309;
+  --bad: #b91c1c;
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: var(--tg-theme-secondary-bg-color, #0f1115);
+    --card: var(--tg-theme-bg-color, #1a1d24);
+    --text: var(--tg-theme-text-color, #eceef2);
+    --muted: var(--tg-theme-hint-color, #9aa1ad);
+    --accent: var(--tg-theme-button-color, #3b82f6);
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: calc(env(safe-area-inset-top) + 10px) 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font-size: 20px; margin: 0; }
+
+.who {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  max-width: 55vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabs { display: flex; gap: 4px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+}
+.tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.tab .count { margin-left: 4px; font-variant-numeric: tabular-nums; }
+
+.list {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 16px calc(env(safe-area-inset-bottom) + 32px);
+  display: grid;
+  gap: 12px;
+}
+
+.empty { text-align: center; color: var(--muted); padding: 48px 0; }
+
+.card { background: var(--card); border-radius: var(--radius); padding: 14px; border: 1px solid var(--line); }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.name { font-weight: 600; }
+.sub { color: var(--muted); font-size: 13px; }
+
+.badge {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  text-transform: capitalize;
+}
+.badge.pending { color: var(--warn); }
+.badge.sent { color: var(--ok); }
+.badge.rejected, .badge.failed { color: var(--bad); }
+.badge.approved, .badge.sending { color: var(--accent); }
+
+.bubble {
+  margin: 12px 0 6px;
+  padding: 10px 12px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 12px; }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+.actions.single { grid-template-columns: 1fr; }
+.actions.double { grid-template-columns: 1fr 1fr; }
+
+.btn {
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  padding: 0 12px;
+}
+.btn:disabled { opacity: 0.5; }
+.btn.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+.btn.danger { color: var(--bad); }
+.btn.ghost { background: none; }
+.btn.link { min-height: 36px; border: 0; background: none; color: var(--accent); padding: 0; font-weight: 500; font-size: 13px; }
+
+.history { margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); list-style: none; font-size: 13px; }
+.history li { padding: 3px 0; color: var(--muted); }
+.history li b { color: var(--text); font-weight: 600; }
+.history .old { margin: 4px 0 6px; padding: 6px 8px; background: var(--bg); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet[hidden] { display: none; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+.sheet-panel {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  background: var(--card);
+  border-radius: 18px 18px 0 0;
+  padding: 18px 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+.sheet-panel h2 { margin: 0 0 4px; font-size: 18px; }
+.hint { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+
+textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  padding: 10px 12px;
+  resize: vertical;
+}
+.meter { min-height: 18px; margin-top: 6px; font-size: 12px; color: var(--muted); text-align: right; }
+.meter.over { color: var(--bad); }
+.sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  z-index: 30;
+  max-width: 608px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #16181d;
+  color: #ffffff;
+  font-size: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+.toast.error { background: var(--bad); color: #ffffff; }
+.toast[hidden] { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-panel { animation: rise 0.18s ease-out; }
+  @keyframes rise { from { transform: translateY(24px); } }
+}
